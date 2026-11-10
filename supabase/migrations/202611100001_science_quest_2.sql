@@ -86,7 +86,7 @@ alter table public.sq_quest_claims enable row level security;
 revoke all on public.sq_groups, public.sq_worlds, public.sq_inventory,
   public.sq_trades, public.sq_quests, public.sq_quest_progress,
   public.sq_quest_claims from anon, authenticated;
-grant select on public.sq_groups, public.sq_worlds, public.sq_quests to authenticated;
+grant select, insert, update, delete on public.sq_groups, public.sq_worlds, public.sq_quests to authenticated;
 grant select on public.sq_inventory, public.sq_trades,
   public.sq_quest_progress, public.sq_quest_claims to authenticated;
 
@@ -110,7 +110,10 @@ drop policy if exists sq_trades_read_party on public.sq_trades;
 create policy sq_trades_read_party on public.sq_trades for select to authenticated
   using (sender_id = (select auth.uid()) or recipient_id = (select auth.uid()));
 drop policy if exists sq_quests_read on public.sq_quests;
-create policy sq_quests_read on public.sq_quests for select to authenticated using (active);
+create policy sq_quests_read on public.sq_quests for select to authenticated using (active or public.sq_is_admin());
+drop policy if exists sq_quests_admin_all on public.sq_quests;
+create policy sq_quests_admin_all on public.sq_quests for all to authenticated
+  using (public.sq_is_admin()) with check (public.sq_is_admin());
 drop policy if exists sq_progress_read_self on public.sq_quest_progress;
 create policy sq_progress_read_self on public.sq_quest_progress for select to authenticated
   using (user_id = (select auth.uid()));
